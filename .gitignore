@@ -32,3 +32,8 @@ Session.vim
 
 #src/content/**/*.mdx
 #src/content/**/index.md
+
+# Baseline materials (keep locally but don't publish)
+demo/
+rdi-training/
+rdi-training.zip

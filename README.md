@@ -17,7 +17,7 @@ cd Redis_RDI_CTF
 pip3 install pandas psycopg2-binary SQLAlchemy==1.4.46
 
 # Generate continuous track data (runs forever - press Ctrl+C to stop)
-cd demo/scripts
+cd scripts
 python3 generate_load.py
 ```
 *This continuously generates realistic track data using 3,495 real track names and composers. Perfect for testing RDI in real-time!*
