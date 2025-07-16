@@ -13,11 +13,14 @@ cd Redis_RDI_CTF
 
 ### **2. Load Sample Data**
 ```bash
-# Load music database with sample tracks
-cd scripts
-./load_data.sh
+# Install dependencies
+pip3 install pandas psycopg2-binary SQLAlchemy==1.4.46
+
+# Generate continuous track data
+cd from-repo/scripts
+python3 generate_load.py
 ```
-*This creates a music database with artists, albums, and tracks for RDI testing.*
+*This continuously generates realistic track data using 3,495 real track names and composers.*
 
 ### **3. Access Tools**
 - **Redis Insight**: http://localhost:5540 - *Connect to your Redis database*
@@ -25,24 +28,14 @@ cd scripts
 - **Monitoring**: http://localhost:3000 - *Grafana dashboards*
 - **PostgreSQL**: localhost:5432 - *Direct database access (postgres/postgres)*
 
-## 🔄 Generate Test Data
+## 🔄 Data Loading Details
 
-### **Continuous Data Generation (for RDI testing)**
-```bash
-# Generate new tracks every few seconds
-cd scripts
-python3 auto_load_data.py
-# Choose "y" for continuous generation
-```
-*Perfect for watching RDI sync data in real-time!*
-
-### **Single Batch Generation**
-```bash
-# Add a few tracks at once
-cd scripts
-python3 auto_load_data.py
-# Choose "n" for one-time load
-```
+The data generator uses a CSV file with **3,495 real track records** including:
+- **Real track names**: "Stairway to Heaven", "Bohemian Rhapsody", "Hotel California", etc.
+- **Real composers**: "Angus Young, Malcolm Young, Brian Johnson", "Steven Tyler, Joe Perry", etc.
+- **Automatic TrackId management**: Finds the highest existing ID and increments from there
+- **Random realistic data**: Milliseconds (100-300k), Bytes (100-500k), Genres (1-5)
+- **Continuous generation**: Adds tracks every 100-500ms for realistic CDC testing
 
 ## 🔧 Basic RDI Setup
 
