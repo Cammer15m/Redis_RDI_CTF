@@ -16,11 +16,11 @@ cd Redis_RDI_CTF
 # Install dependencies
 pip3 install pandas psycopg2-binary SQLAlchemy==1.4.46
 
-# Generate continuous track data
+# Generate continuous track data (runs forever - press Ctrl+C to stop)
 cd from-repo/scripts
 python3 generate_load.py
 ```
-*This continuously generates realistic track data using 3,495 real track names and composers.*
+*This continuously generates realistic track data using 3,495 real track names and composers. Perfect for testing RDI in real-time!*
 
 ### **3. Access Tools**
 - **Redis Insight**: http://localhost:5540 - *Connect to your Redis database*
@@ -28,21 +28,110 @@ python3 generate_load.py
 - **Monitoring**: http://localhost:3000 - *Grafana dashboards*
 - **PostgreSQL**: localhost:5432 - *Direct database access (postgres/postgres)*
 
-## 🔄 Data Loading Details
+## 🎵 Data Generator Features
 
-The data generator uses a CSV file with **3,495 real track records** including:
+The `generate_load.py` script provides realistic continuous data for RDI testing:
+
+### **Real Music Data**
+- **3,495 authentic track records** from the Chinook database
 - **Real track names**: "Stairway to Heaven", "Bohemian Rhapsody", "Hotel California", etc.
 - **Real composers**: "Angus Young, Malcolm Young, Brian Johnson", "Steven Tyler, Joe Perry", etc.
-- **Automatic TrackId management**: Finds the highest existing ID and increments from there
-- **Random realistic data**: Milliseconds (100-300k), Bytes (100-500k), Genres (1-5)
+- **Proper data types**: Realistic milliseconds, bytes, genres, and pricing
+
+### **Smart Data Management**
+- **Automatic TrackId handling**: Finds MAX(TrackId) and increments safely
+- **No primary key conflicts**: Solves the duplicate key constraint issue
 - **Continuous generation**: Adds tracks every 100-500ms for realistic CDC testing
+- **Random selection**: Picks different tracks each time for variety
 
-## 🔧 Basic RDI Setup
+### **Perfect for RDI Testing**
+- **Change Data Capture (CDC)**: Watch real-time sync to Redis
+- **Performance testing**: Sustained data flow for load testing
+- **Demo scenarios**: Realistic data for presentations
 
-### **Connect to Your Redis Database**
-1. Open **Redis Insight**: http://localhost:5540
-2. Add your Redis database connection
-3. Configure RDI pipeline using the web interface
+## 🔧 Complete RDI Setup
+
+### **Step 1: Create RDI Configuration**
+Create the main RDI config file:
+```bash
+# Create config directory
+mkdir -p rdi_config
+
+# Create config.yaml
+cat > rdi_config/config.yaml << 'EOF'
+connections:
+  # Redis target DB connection details
+  target:
+    type: redis
+    host: your-redis-host.redns.redis-cloud.com  # Replace with your Redis Cloud host
+    port: 12345                                   # Replace with your Redis Cloud port
+    password: your-redis-password                 # Replace with your Redis Cloud password
+    # For Redis Cloud, uncomment these if using TLS:
+    # tls: true
+    # tls_skip_verify: false
+EOF
+```
+
+### **Step 2: Create Ingest Configuration**
+```bash
+# Create ingest-config.yaml
+cat > rdi_config/ingest-config.yaml << 'EOF'
+connections:
+  # Redis target DB connection details
+  target:
+    host: your-redis-host.redns.redis-cloud.com  # Replace with your Redis Cloud host
+    port: 12345                                   # Replace with your Redis Cloud port
+    password: your-redis-password                 # Replace with your Redis Cloud password
+    # For Redis Cloud with TLS:
+    # tls: true
+    # tls_skip_verify: false
+
+applier:
+  # Error handling strategy: ignore - skip, dlq - store rejected messages in a dead letter queue
+  error_handling: dlq
+  # Dead letter queue max messages per stream
+  dlq_max_messages: 100
+  # Target data type: hash/json - RedisJSON module must be in use in the target DB
+  target_data_type: hash
+EOF
+```
+
+### **Step 3: Create Job Configuration**
+```bash
+# Create jobs directory and track job
+mkdir -p rdi_config/jobs
+
+# Create track.yaml job
+cat > rdi_config/jobs/track.yaml << 'EOF'
+source:
+    table: Track
+transform:
+  - uses: add_field
+    with:
+      field: NameUpper
+      expression: upper("Name")
+      language: sql
+  - uses: filter
+    with:
+      expression: GenreId=2  # Only sync Metal tracks (GenreId=2)
+      language: sql
+EOF
+```
+
+### **Step 4: Deploy and Start RDI**
+```bash
+# Access RDI container
+docker exec -it rdi bash
+
+# Deploy configuration
+redis-di deploy --config /path/to/rdi_config
+
+# Start the pipeline
+redis-di start
+
+# Check status
+redis-di status
+```
 
 ### **Monitor Data Sync**
 - **PostgreSQL data**: http://localhost:3001 (SQLPad)
